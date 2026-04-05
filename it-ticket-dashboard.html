@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>แดชบอร์ดตั๋วสนับสนุน IT</title>
+  <title>IT Ticket Dashboard</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Segoe UI', 'Noto Sans Thai', sans-serif;
+      font-family: 'Segoe UI', system-ui, sans-serif;
       background: #0f1117;
       color: #e2e8f0;
       min-height: 100vh;
@@ -27,77 +27,205 @@
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
       border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 22px;
+      font-size: 22px; flex-shrink: 0;
     }
     header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.4px; }
     header p  { font-size: 0.82rem; color: #64748b; margin-top: 2px; }
 
-    /* ── Summary Cards ── */
-    .summary-group { margin-bottom: 28px; }
-    .summary-group h2 {
-      font-size: 0.75rem;
+    /* ── Section label ── */
+    .section-label {
+      font-size: 0.72rem;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: #64748b;
       margin-bottom: 12px;
     }
+
+    /* ── Summary Cards row ── */
+    .summary-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+    .summary-group { flex: 1 1 280px; }
     .cards {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 10px;
     }
     .card {
-      flex: 1 1 130px;
+      flex: 1 1 100px;
       background: #1e2130;
       border: 1px solid #2d3148;
       border-radius: 14px;
-      padding: 16px 20px;
+      padding: 14px 18px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      transition: transform .15s, box-shadow .15s;
+      gap: 5px;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s, border-color .15s;
     }
-    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px #0006; }
-    .card .label { font-size: 0.78rem; color: #94a3b8; }
-    .card .count { font-size: 2rem; font-weight: 700; line-height: 1; }
+    .card:hover          { transform: translateY(-2px); box-shadow: 0 8px 24px #0006; }
+    .card.active-filter  { border-color: #6366f1; box-shadow: 0 0 0 1px #6366f1; }
+    .card .label { font-size: 0.75rem; color: #94a3b8; }
+    .card .count { font-size: 1.9rem; font-weight: 700; line-height: 1; }
     .card .bar   { height: 3px; border-radius: 2px; margin-top: 4px; }
 
     /* Priority colours */
-    .high   .count { color: #f87171; }
-    .high   .bar   { background: #f87171; }
-    .medium .count { color: #fb923c; }
-    .medium .bar   { background: #fb923c; }
-    .low    .count { color: #4ade80; }
-    .low    .bar   { background: #4ade80; }
-
+    .high   .count { color: #f87171; } .high   .bar { background: #f87171; }
+    .medium .count { color: #fb923c; } .medium .bar { background: #fb923c; }
+    .low    .count { color: #4ade80; } .low    .bar { background: #4ade80; }
     /* Status colours */
-    .open       .count { color: #60a5fa; }
-    .open       .bar   { background: #60a5fa; }
-    .inprogress .count { color: #facc15; }
-    .inprogress .bar   { background: #facc15; }
-    .resolved   .count { color: #34d399; }
-    .resolved   .bar   { background: #34d399; }
+    .open       .count { color: #60a5fa; } .open       .bar { background: #60a5fa; }
+    .inprogress .count { color: #facc15; } .inprogress .bar { background: #facc15; }
+    .resolved   .count { color: #34d399; } .resolved   .bar { background: #34d399; }
+
+    /* ── Bar Chart (CSS only) ── */
+    .chart-section {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+    }
+    .chart-section .section-label { margin-bottom: 18px; }
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 20px;
+      height: 120px;
+    }
+    .chart-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .chart-col .bar-wrap {
+      width: 100%;
+      max-width: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      height: 90px;
+    }
+    .chart-col .bar-fill {
+      width: 100%;
+      max-width: 80px;
+      border-radius: 6px 6px 0 0;
+      transition: height .4s ease;
+      position: relative;
+    }
+    .chart-col .bar-val {
+      position: absolute;
+      top: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.85rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .chart-col.ch-high   .bar-fill { background: linear-gradient(180deg, #f87171, #b91c1c); }
+    .chart-col.ch-medium .bar-fill { background: linear-gradient(180deg, #fb923c, #c2410c); }
+    .chart-col.ch-low    .bar-fill { background: linear-gradient(180deg, #4ade80, #15803d); }
+    .chart-col.ch-high   .bar-val  { color: #f87171; }
+    .chart-col.ch-medium .bar-val  { color: #fb923c; }
+    .chart-col.ch-low    .bar-val  { color: #4ade80; }
+    .chart-col .bar-label { font-size: 0.75rem; color: #94a3b8; font-weight: 500; }
 
     /* ── Table Section ── */
-    .table-section { background: #1e2130; border: 1px solid #2d3148; border-radius: 16px; overflow: hidden; }
-    .table-header {
+    .table-section {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .table-toolbar {
+      padding: 16px 20px;
+      border-bottom: 1px solid #2d3148;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .table-toolbar-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-right: auto;
+    }
+
+    /* Search box */
+    .search-wrap { position: relative; }
+    .search-wrap svg {
+      position: absolute; left: 10px; top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none; opacity: .4;
+    }
+    #search-input {
+      background: #161825;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 0.82rem;
+      padding: 7px 10px 7px 32px;
+      width: 200px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    #search-input:focus { border-color: #6366f1; }
+    #search-input::placeholder { color: #475569; }
+
+    /* Filter buttons */
+    .filter-group {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 18px 22px;
-      border-bottom: 1px solid #2d3148;
+      gap: 6px;
+      flex-wrap: wrap;
     }
-    .table-header h2 { font-size: 0.95rem; font-weight: 600; }
-    .table-header span { font-size: 0.78rem; color: #64748b; }
+    .filter-group .fg-label {
+      font-size: 0.7rem;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-right: 2px;
+    }
+    .filter-btn {
+      background: #161825;
+      border: 1px solid #2d3148;
+      color: #94a3b8;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: background .12s, color .12s, border-color .12s;
+      white-space: nowrap;
+    }
+    .filter-btn:hover { border-color: #6366f1; color: #c7d2fe; }
+    .filter-btn.active {
+      background: #312e81;
+      border-color: #6366f1;
+      color: #e0e7ff;
+    }
 
+    /* Result count */
+    #result-count { font-size: 0.78rem; color: #64748b; white-space: nowrap; }
+
+    /* Table */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     thead th {
       background: #161825;
-      padding: 11px 16px;
+      padding: 10px 16px;
       text-align: left;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -108,29 +236,42 @@
       transition: color .15s;
     }
     thead th:hover { color: #c7d2fe; }
-    thead th .sort-icon { margin-left: 4px; opacity: 0.4; font-style: normal; }
-    thead th.asc  .sort-icon::after { content: ' ▲'; opacity: 1; color: #818cf8; }
-    thead th.desc .sort-icon::after { content: ' ▼'; opacity: 1; color: #818cf8; }
-    thead th:not(.asc):not(.desc) .sort-icon::after { content: ' ⇅'; }
+    thead th .sort-icon { margin-left: 4px; font-style: normal; opacity: .35; }
+    thead th.asc  .sort-icon::after { content: '▲'; opacity: 1; color: #818cf8; }
+    thead th.desc .sort-icon::after { content: '▼'; opacity: 1; color: #818cf8; }
+    thead th:not(.asc):not(.desc) .sort-icon::after { content: '⇅'; }
 
     tbody tr {
       border-top: 1px solid #252840;
-      transition: background .12s;
+      cursor: pointer;
+      transition: background .1s;
     }
     tbody tr:hover { background: #252840; }
-    td { padding: 12px 16px; vertical-align: middle; }
+    td { padding: 11px 16px; vertical-align: middle; }
 
-    .ticket-id   { font-family: monospace; color: #818cf8; font-size: 0.8rem; }
-    .ticket-title { font-weight: 500; }
+    .ticket-id    { font-family: monospace; color: #818cf8; font-size: 0.8rem; }
+    .ticket-title { font-weight: 500; max-width: 300px; }
+    .assignee     { color: #cbd5e1; }
+    .date         { color: #64748b; font-size: 0.8rem; white-space: nowrap; }
+
+    /* Empty state */
+    .empty-row td {
+      text-align: center;
+      padding: 40px;
+      color: #475569;
+      font-size: 0.88rem;
+      cursor: default;
+    }
 
     /* Badges */
     .badge {
       display: inline-block;
       padding: 3px 10px;
       border-radius: 99px;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 600;
-      letter-spacing: 0.03em;
+      letter-spacing: .03em;
+      white-space: nowrap;
     }
     .badge-high       { background: #7f1d1d; color: #fca5a5; }
     .badge-medium     { background: #7c2d12; color: #fdba74; }
@@ -139,80 +280,218 @@
     .badge-inprogress { background: #713f12; color: #fde047; }
     .badge-resolved   { background: #064e3b; color: #6ee7b7; }
 
-    .assignee { color: #cbd5e1; }
-    .date     { color: #64748b; font-size: 0.8rem; white-space: nowrap; }
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: #000a;
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #1e2130;
+      border: 1px solid #3d4268;
+      border-radius: 18px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 24px 80px #0009;
+      animation: modal-in .18s ease;
+    }
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(.95) translateY(8px); }
+      to   { opacity: 1; transform: scale(1)  translateY(0);    }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid #2d3148;
+    }
+    .modal-header .modal-id {
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: #818cf8;
+      margin-bottom: 4px;
+    }
+    .modal-header .modal-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    .modal-close {
+      background: #252840;
+      border: none;
+      color: #94a3b8;
+      border-radius: 8px;
+      width: 30px; height: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .12s, color .12s;
+    }
+    .modal-close:hover { background: #3d4268; color: #e2e8f0; }
+
+    .modal-body {
+      padding: 20px 24px 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px 24px;
+    }
+    .modal-field .field-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 5px;
+    }
+    .modal-field .field-value {
+      font-size: 0.88rem;
+      color: #e2e8f0;
+    }
+    .modal-field.full { grid-column: 1 / -1; }
   </style>
 </head>
 <body>
 
+<!-- Header -->
 <header>
   <div class="icon">🎫</div>
   <div>
-    <h1>แดชบอร์ดตั๋วสนับสนุน IT</h1>
-    <p>ระบบติดตามและจัดการคำร้องขอสนับสนุนด้านไอที</p>
+    <h1>IT Ticket Dashboard</h1>
+    <p>Track and manage IT support requests</p>
   </div>
 </header>
 
-<!-- Priority Summary -->
-<div class="summary-group">
-  <h2>สรุปตามระดับความสำคัญ</h2>
-  <div class="cards">
-    <div class="card high">
-      <span class="label">สูง (High)</span>
-      <span class="count" id="cnt-high">0</span>
-      <div class="bar"></div>
+<!-- Summary Cards -->
+<div class="summary-row">
+  <div class="summary-group">
+    <p class="section-label">By Priority</p>
+    <div class="cards">
+      <div class="card high"   data-filter-priority="High">
+        <span class="label">High</span>
+        <span class="count" id="cnt-high">0</span>
+        <div class="bar"></div>
+      </div>
+      <div class="card medium" data-filter-priority="Medium">
+        <span class="label">Medium</span>
+        <span class="count" id="cnt-medium">0</span>
+        <div class="bar"></div>
+      </div>
+      <div class="card low"    data-filter-priority="Low">
+        <span class="label">Low</span>
+        <span class="count" id="cnt-low">0</span>
+        <div class="bar"></div>
+      </div>
     </div>
-    <div class="card medium">
-      <span class="label">ปานกลาง (Medium)</span>
-      <span class="count" id="cnt-medium">0</span>
-      <div class="bar"></div>
-    </div>
-    <div class="card low">
-      <span class="label">ต่ำ (Low)</span>
-      <span class="count" id="cnt-low">0</span>
-      <div class="bar"></div>
+  </div>
+
+  <div class="summary-group">
+    <p class="section-label">By Status</p>
+    <div class="cards">
+      <div class="card open"       data-filter-status="Open">
+        <span class="label">Open</span>
+        <span class="count" id="cnt-open">0</span>
+        <div class="bar"></div>
+      </div>
+      <div class="card inprogress" data-filter-status="In Progress">
+        <span class="label">In Progress</span>
+        <span class="count" id="cnt-inprogress">0</span>
+        <div class="bar"></div>
+      </div>
+      <div class="card resolved"   data-filter-status="Resolved">
+        <span class="label">Resolved</span>
+        <span class="count" id="cnt-resolved">0</span>
+        <div class="bar"></div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Status Summary -->
-<div class="summary-group">
-  <h2>สรุปตามสถานะ</h2>
-  <div class="cards">
-    <div class="card open">
-      <span class="label">เปิด (Open)</span>
-      <span class="count" id="cnt-open">0</span>
-      <div class="bar"></div>
+<!-- Bar Chart -->
+<div class="chart-section">
+  <p class="section-label">Ticket Volume by Priority</p>
+  <div class="chart-bars" id="chart-bars">
+    <div class="chart-col ch-high">
+      <div class="bar-wrap">
+        <div class="bar-fill" id="bar-high" style="height:0;position:relative;">
+          <span class="bar-val" id="bar-val-high"></span>
+        </div>
+      </div>
+      <span class="bar-label">High</span>
     </div>
-    <div class="card inprogress">
-      <span class="label">กำลังดำเนินการ</span>
-      <span class="count" id="cnt-inprogress">0</span>
-      <div class="bar"></div>
+    <div class="chart-col ch-medium">
+      <div class="bar-wrap">
+        <div class="bar-fill" id="bar-medium" style="height:0;position:relative;">
+          <span class="bar-val" id="bar-val-medium"></span>
+        </div>
+      </div>
+      <span class="bar-label">Medium</span>
     </div>
-    <div class="card resolved">
-      <span class="label">แก้ไขแล้ว</span>
-      <span class="count" id="cnt-resolved">0</span>
-      <div class="bar"></div>
+    <div class="chart-col ch-low">
+      <div class="bar-wrap">
+        <div class="bar-fill" id="bar-low" style="height:0;position:relative;">
+          <span class="bar-val" id="bar-val-low"></span>
+        </div>
+      </div>
+      <span class="bar-label">Low</span>
     </div>
   </div>
 </div>
 
 <!-- Ticket Table -->
 <div class="table-section">
-  <div class="table-header">
-    <h2>รายการตั๋วทั้งหมด</h2>
-    <span id="total-label"></span>
+  <div class="table-toolbar">
+    <span class="table-toolbar-title">All Tickets</span>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input id="search-input" type="text" placeholder="Search by title…" autocomplete="off" />
+    </div>
+
+    <!-- Priority filters -->
+    <div class="filter-group">
+      <span class="fg-label">Priority</span>
+      <button class="filter-btn active" data-p="All">All</button>
+      <button class="filter-btn" data-p="High">High</button>
+      <button class="filter-btn" data-p="Medium">Medium</button>
+      <button class="filter-btn" data-p="Low">Low</button>
+    </div>
+
+    <!-- Status filters -->
+    <div class="filter-group">
+      <span class="fg-label">Status</span>
+      <button class="filter-btn active" data-s="All">All</button>
+      <button class="filter-btn" data-s="Open">Open</button>
+      <button class="filter-btn" data-s="In Progress">In Progress</button>
+      <button class="filter-btn" data-s="Resolved">Resolved</button>
+    </div>
+
+    <span id="result-count"></span>
   </div>
+
   <div class="table-wrap">
-    <table id="ticket-table">
+    <table>
       <thead>
         <tr>
-          <th data-col="id">รหัส<i class="sort-icon"></i></th>
-          <th data-col="title">หัวข้อ<i class="sort-icon"></i></th>
-          <th data-col="priority">ระดับความสำคัญ<i class="sort-icon"></i></th>
-          <th data-col="status">สถานะ<i class="sort-icon"></i></th>
-          <th data-col="assignedTo">ผู้รับผิดชอบ<i class="sort-icon"></i></th>
-          <th data-col="createdDate">วันที่สร้าง<i class="sort-icon"></i></th>
+          <th data-col="id">ID<i class="sort-icon"></i></th>
+          <th data-col="title">Title<i class="sort-icon"></i></th>
+          <th data-col="priority">Priority<i class="sort-icon"></i></th>
+          <th data-col="status">Status<i class="sort-icon"></i></th>
+          <th data-col="assignedTo">Assigned To<i class="sort-icon"></i></th>
+          <th data-col="createdDate">Created Date<i class="sort-icon"></i></th>
         </tr>
       </thead>
       <tbody id="ticket-tbody"></tbody>
@@ -220,89 +499,238 @@
   </div>
 </div>
 
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-id" id="modal-id"></div>
+        <div class="modal-title" id="modal-title"></div>
+      </div>
+      <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <div class="field-label">Priority</div>
+        <div class="field-value" id="modal-priority"></div>
+      </div>
+      <div class="modal-field">
+        <div class="field-label">Status</div>
+        <div class="field-value" id="modal-status"></div>
+      </div>
+      <div class="modal-field">
+        <div class="field-label">Assigned To</div>
+        <div class="field-value" id="modal-assignedTo"></div>
+      </div>
+      <div class="modal-field">
+        <div class="field-label">Created Date</div>
+        <div class="field-value" id="modal-createdDate"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+  /* ── Data ─────────────────────────────────────────────── */
   const tickets = [
-    { id: 'INC-0001', title: 'อีเมลใช้งานไม่ได้หลังอัปเดตระบบ',         priority: 'High',   status: 'Open',        assignedTo: 'สมชาย ใจดี',      createdDate: '2026-03-28' },
-    { id: 'INC-0002', title: 'เครื่องพิมพ์ในชั้น 3 ไม่ตอบสนอง',          priority: 'Medium', status: 'In Progress', assignedTo: 'นภา รักงาน',      createdDate: '2026-03-29' },
-    { id: 'INC-0003', title: 'VPN เชื่อมต่อไม่ได้จากที่บ้าน',            priority: 'High',   status: 'In Progress', assignedTo: 'วิชัย มั่นคง',    createdDate: '2026-03-30' },
-    { id: 'INC-0004', title: 'ลืมรหัสผ่านเข้าระบบ ERP',                  priority: 'Low',    status: 'Resolved',    assignedTo: 'สุดา พร้อมช่วย',  createdDate: '2026-03-30' },
-    { id: 'INC-0005', title: 'หน้าจอค้างระหว่างประมวลผลรายงาน',          priority: 'High',   status: 'Open',        assignedTo: 'ประเสริฐ เก่งงาน', createdDate: '2026-03-31' },
-    { id: 'INC-0006', title: 'ไฟล์แชร์ไดรฟ์เข้าไม่ได้',                  priority: 'Medium', status: 'Resolved',    assignedTo: 'นภา รักงาน',      createdDate: '2026-04-01' },
-    { id: 'INC-0007', title: 'ขอติดตั้งโปรแกรม Adobe Acrobat',            priority: 'Low',    status: 'Open',        assignedTo: 'สมชาย ใจดี',      createdDate: '2026-04-01' },
-    { id: 'INC-0008', title: 'ระบบสแกนลายนิ้วมือหน้าประตูทำงานผิดปกติ',  priority: 'High',   status: 'In Progress', assignedTo: 'วิชัย มั่นคง',    createdDate: '2026-04-02' },
-    { id: 'INC-0009', title: 'ขอเพิ่มสิทธิ์เข้าถึงฐานข้อมูลการเงิน',     priority: 'Medium', status: 'Open',        assignedTo: 'ประเสริฐ เก่งงาน', createdDate: '2026-04-03' },
-    { id: 'INC-0010', title: 'โน้ตบุ๊กแบตเตอรี่เสื่อมสภาพ ชาร์จไม่ติด',  priority: 'Low',    status: 'Resolved',    assignedTo: 'สุดา พร้อมช่วย',  createdDate: '2026-04-04' },
+    { id:'INC-0001', title:'Email service down after system update',         priority:'High',   status:'Open',        assignedTo:'James Wilson',    createdDate:'2026-03-28' },
+    { id:'INC-0002', title:'Printer on 3rd floor not responding',            priority:'Medium', status:'In Progress', assignedTo:'Sara Lee',         createdDate:'2026-03-29' },
+    { id:'INC-0003', title:'VPN cannot connect from home network',           priority:'High',   status:'In Progress', assignedTo:'Mike Chen',        createdDate:'2026-03-30' },
+    { id:'INC-0004', title:'Forgot ERP system login password',               priority:'Low',    status:'Resolved',    assignedTo:'Anna Smith',       createdDate:'2026-03-30' },
+    { id:'INC-0005', title:'Screen freezes while generating reports',        priority:'High',   status:'Open',        assignedTo:'Tom Davis',        createdDate:'2026-03-31' },
+    { id:'INC-0006', title:'Cannot access shared network drive',             priority:'Medium', status:'Resolved',    assignedTo:'Sara Lee',         createdDate:'2026-04-01' },
+    { id:'INC-0007', title:'Request to install Adobe Acrobat Pro',           priority:'Low',    status:'Open',        assignedTo:'James Wilson',     createdDate:'2026-04-01' },
+    { id:'INC-0008', title:'Fingerprint scanner at main door malfunctioning',priority:'High',   status:'In Progress', assignedTo:'Mike Chen',        createdDate:'2026-04-02' },
+    { id:'INC-0009', title:'Request elevated access to finance database',    priority:'Medium', status:'Open',        assignedTo:'Tom Davis',        createdDate:'2026-04-03' },
+    { id:'INC-0010', title:'Laptop battery degraded, will not charge',       priority:'Low',    status:'Resolved',    assignedTo:'Anna Smith',       createdDate:'2026-04-04' },
   ];
 
-  // ── Count summaries ──────────────────────────────────────
-  const priorityMap = { High: 0, Medium: 0, Low: 0 };
-  const statusMap   = { Open: 0, 'In Progress': 0, Resolved: 0 };
-  tickets.forEach(t => { priorityMap[t.priority]++; statusMap[t.status]++; });
+  /* ── Lookup maps ─────────────────────────────────────── */
+  const priorityClass = { High:'badge-high', Medium:'badge-medium', Low:'badge-low' };
+  const statusClass   = { Open:'badge-open', 'In Progress':'badge-inprogress', Resolved:'badge-resolved' };
+  const priorityOrder = { High:0, Medium:1, Low:2 };
+  const statusOrder   = { Open:0, 'In Progress':1, Resolved:2 };
 
-  document.getElementById('cnt-high').textContent      = priorityMap.High;
-  document.getElementById('cnt-medium').textContent    = priorityMap.Medium;
-  document.getElementById('cnt-low').textContent       = priorityMap.Low;
-  document.getElementById('cnt-open').textContent      = statusMap.Open;
-  document.getElementById('cnt-inprogress').textContent = statusMap['In Progress'];
-  document.getElementById('cnt-resolved').textContent  = statusMap.Resolved;
-  document.getElementById('total-label').textContent   = `ทั้งหมด ${tickets.length} รายการ`;
+  /* ── Summary counts ──────────────────────────────────── */
+  const pCount = { High:0, Medium:0, Low:0 };
+  const sCount = { Open:0, 'In Progress':0, Resolved:0 };
+  tickets.forEach(t => { pCount[t.priority]++; sCount[t.status]++; });
 
-  // ── Badge helpers ─────────────────────────────────────────
-  const priorityLabel = { High: 'สูง',        Medium: 'ปานกลาง', Low: 'ต่ำ' };
-  const statusLabel   = { Open: 'เปิด', 'In Progress': 'กำลังดำเนินการ', Resolved: 'แก้ไขแล้ว' };
-  const priorityClass = { High: 'badge-high', Medium: 'badge-medium', Low: 'badge-low' };
-  const statusClass   = { Open: 'badge-open', 'In Progress': 'badge-inprogress', Resolved: 'badge-resolved' };
+  document.getElementById('cnt-high').textContent       = pCount.High;
+  document.getElementById('cnt-medium').textContent     = pCount.Medium;
+  document.getElementById('cnt-low').textContent        = pCount.Low;
+  document.getElementById('cnt-open').textContent       = sCount.Open;
+  document.getElementById('cnt-inprogress').textContent = sCount['In Progress'];
+  document.getElementById('cnt-resolved').textContent   = sCount.Resolved;
 
-  const priorityOrder = { High: 0, Medium: 1, Low: 2 };
-  const statusOrder   = { Open: 0, 'In Progress': 1, Resolved: 2 };
+  /* ── Bar chart ───────────────────────────────────────── */
+  const maxCount = Math.max(pCount.High, pCount.Medium, pCount.Low);
+  const maxBarPx = 80; // matches .bar-wrap height
+  ['high','medium','low'].forEach(key => {
+    const cnt = pCount[key.charAt(0).toUpperCase() + key.slice(1)];
+    const h   = maxCount ? Math.round((cnt / maxCount) * maxBarPx) : 0;
+    document.getElementById('bar-' + key).style.height    = h + 'px';
+    document.getElementById('bar-val-' + key).textContent = cnt;
+  });
 
-  // ── Sorting state ─────────────────────────────────────────
+  /* ── Filter & search state ───────────────────────────── */
+  let filterPriority = 'All';
+  let filterStatus   = 'All';
+  let searchQuery    = '';
   let sortCol = 'id', sortDir = 'asc';
 
-  function getValue(ticket, col) {
-    if (col === 'priority') return priorityOrder[ticket.priority];
-    if (col === 'status')   return statusOrder[ticket.status];
-    return ticket[col] ?? '';
+  /* ── Render table ────────────────────────────────────── */
+  function getFilteredSorted() {
+    return tickets
+      .filter(t => {
+        const matchP = filterPriority === 'All' || t.priority === filterPriority;
+        const matchS = filterStatus   === 'All' || t.status   === filterStatus;
+        const matchQ = !searchQuery   || t.title.toLowerCase().includes(searchQuery);
+        return matchP && matchS && matchQ;
+      })
+      .sort((a, b) => {
+        let va = sortCol === 'priority' ? priorityOrder[a.priority]
+               : sortCol === 'status'   ? statusOrder[a.status]
+               : a[sortCol] ?? '';
+        let vb = sortCol === 'priority' ? priorityOrder[b.priority]
+               : sortCol === 'status'   ? statusOrder[b.status]
+               : b[sortCol] ?? '';
+        const cmp = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb));
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
   }
 
   function renderTable() {
-    const sorted = [...tickets].sort((a, b) => {
-      const va = getValue(a, sortCol);
-      const vb = getValue(b, sortCol);
-      const cmp = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb), 'th');
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-
+    const rows = getFilteredSorted();
     const tbody = document.getElementById('ticket-tbody');
-    tbody.innerHTML = sorted.map(t => `
-      <tr>
-        <td class="ticket-id">${t.id}</td>
-        <td class="ticket-title">${t.title}</td>
-        <td><span class="badge ${priorityClass[t.priority]}">${priorityLabel[t.priority]}</span></td>
-        <td><span class="badge ${statusClass[t.status]}">${statusLabel[t.status]}</span></td>
-        <td class="assignee">${t.assignedTo}</td>
-        <td class="date">${t.createdDate}</td>
-      </tr>
-    `).join('');
+
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No tickets match your filters.</td></tr>';
+    } else {
+      tbody.innerHTML = rows.map(t => `
+        <tr data-id="${t.id}">
+          <td class="ticket-id">${t.id}</td>
+          <td class="ticket-title">${highlight(t.title, searchQuery)}</td>
+          <td><span class="badge ${priorityClass[t.priority]}">${t.priority}</span></td>
+          <td><span class="badge ${statusClass[t.status]}">${t.status}</span></td>
+          <td class="assignee">${t.assignedTo}</td>
+          <td class="date">${t.createdDate}</td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('result-count').textContent =
+      rows.length === tickets.length
+        ? `${tickets.length} tickets`
+        : `${rows.length} of ${tickets.length} tickets`;
   }
 
-  // ── Header click → sort ───────────────────────────────────
+  /* Highlight matched search term in title */
+  function highlight(text, query) {
+    if (!query) return text;
+    const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(re, '<mark style="background:#3730a3;color:#c7d2fe;border-radius:2px;padding:0 2px;">$1</mark>');
+  }
+
+  /* ── Sort header clicks ──────────────────────────────── */
   document.querySelectorAll('thead th[data-col]').forEach(th => {
     th.addEventListener('click', () => {
       const col = th.dataset.col;
-      if (sortCol === col) {
-        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-      } else {
-        sortCol = col;
-        sortDir = 'asc';
-      }
-      document.querySelectorAll('thead th').forEach(h => h.classList.remove('asc', 'desc'));
+      sortDir = sortCol === col ? (sortDir === 'asc' ? 'desc' : 'asc') : 'asc';
+      sortCol = col;
+      document.querySelectorAll('thead th').forEach(h => h.classList.remove('asc','desc'));
       th.classList.add(sortDir);
       renderTable();
     });
   });
 
-  // initial render with ID column marked
+  /* ── Priority filter buttons ─────────────────────────── */
+  document.querySelectorAll('[data-p]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterPriority = btn.dataset.p;
+      document.querySelectorAll('[data-p]').forEach(b => b.classList.toggle('active', b === btn));
+      // sync card highlight
+      document.querySelectorAll('[data-filter-priority]').forEach(c =>
+        c.classList.toggle('active-filter', filterPriority !== 'All' && c.dataset.filterPriority === filterPriority));
+      renderTable();
+    });
+  });
+
+  /* ── Status filter buttons ───────────────────────────── */
+  document.querySelectorAll('[data-s]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterStatus = btn.dataset.s;
+      document.querySelectorAll('[data-s]').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('[data-filter-status]').forEach(c =>
+        c.classList.toggle('active-filter', filterStatus !== 'All' && c.dataset.filterStatus === filterStatus));
+      renderTable();
+    });
+  });
+
+  /* ── Summary cards also act as filters ──────────────── */
+  document.querySelectorAll('[data-filter-priority]').forEach(card => {
+    card.addEventListener('click', () => {
+      const val = card.dataset.filterPriority;
+      const isActive = card.classList.contains('active-filter');
+      filterPriority = isActive ? 'All' : val;
+      // sync buttons
+      document.querySelectorAll('[data-p]').forEach(b =>
+        b.classList.toggle('active', b.dataset.p === filterPriority));
+      document.querySelectorAll('[data-filter-priority]').forEach(c =>
+        c.classList.toggle('active-filter', !isActive && c.dataset.filterPriority === val));
+      renderTable();
+    });
+  });
+
+  document.querySelectorAll('[data-filter-status]').forEach(card => {
+    card.addEventListener('click', () => {
+      const val = card.dataset.filterStatus;
+      const isActive = card.classList.contains('active-filter');
+      filterStatus = isActive ? 'All' : val;
+      document.querySelectorAll('[data-s]').forEach(b =>
+        b.classList.toggle('active', b.dataset.s === filterStatus));
+      document.querySelectorAll('[data-filter-status]').forEach(c =>
+        c.classList.toggle('active-filter', !isActive && c.dataset.filterStatus === val));
+      renderTable();
+    });
+  });
+
+  /* ── Search ──────────────────────────────────────────── */
+  document.getElementById('search-input').addEventListener('input', e => {
+    searchQuery = e.target.value.trim().toLowerCase();
+    renderTable();
+  });
+
+  /* ── Modal ───────────────────────────────────────────── */
+  const overlay = document.getElementById('modal-overlay');
+
+  function openModal(ticket) {
+    document.getElementById('modal-id').textContent          = ticket.id;
+    document.getElementById('modal-title').textContent       = ticket.title;
+    document.getElementById('modal-assignedTo').textContent  = ticket.assignedTo;
+    document.getElementById('modal-createdDate').textContent = ticket.createdDate;
+    document.getElementById('modal-priority').innerHTML =
+      `<span class="badge ${priorityClass[ticket.priority]}">${ticket.priority}</span>`;
+    document.getElementById('modal-status').innerHTML =
+      `<span class="badge ${statusClass[ticket.status]}">${ticket.status}</span>`;
+    overlay.classList.add('open');
+  }
+
+  function closeModal() { overlay.classList.remove('open'); }
+
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  /* Row click → modal (delegated) */
+  document.getElementById('ticket-tbody').addEventListener('click', e => {
+    const row = e.target.closest('tr[data-id]');
+    if (!row) return;
+    const ticket = tickets.find(t => t.id === row.dataset.id);
+    if (ticket) openModal(ticket);
+  });
+
+  /* ── Initial render ──────────────────────────────────── */
   document.querySelector('thead th[data-col="id"]').classList.add('asc');
   renderTable();
 </script>
